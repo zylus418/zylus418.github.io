@@ -347,7 +347,7 @@ function renderSurveyCreateForm(container) {
                     <span id="survey-question-count">0 个问题</span>
                 </div>
             </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
            <div>
                 <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:5px;font-weight:600;">最短回复延迟</label>
                 <div style="display:flex;align-items:center;gap:8px;">
