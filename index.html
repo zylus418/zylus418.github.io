@@ -1377,11 +1377,11 @@
                     <div class="settings-item" id="custom-replies-function">
                         <i class="fas fa-comment-dots"></i><span>自定义回复</span>
                     </div>
-                    <div class="settings-item" id="music-player-toggle">
-                        <i class="fas fa-music"></i><span>悬浮音乐播放器</span>
+                    <div class="settings-item" id="envelope-function">
+                        <i class="fas fa-envelope"></i><span>信封投递</span>
                     </div>
-                    <div class="settings-item" id="stats-function">
-                        <i class="fas fa-chart-bar"></i><span>消息统计</span>
+                    <div class="settings-item" id="survey-function">
+                        <i class="fas fa-clipboard-list"></i><span>问卷</span>
                     </div>
                     <div class="settings-item" id="decision-function">
                         <i class="fas fa-balance-scale"></i> 
@@ -1396,8 +1396,11 @@
                     <div class="settings-item" id="mood-function">
                         <i class="fas fa-calendar-day"></i><span>心晴手账</span>
                     </div>
-                    <div class="settings-item" id="envelope-function">
-                        <i class="fas fa-envelope"></i><span>信封投递</span>
+                    <div class="settings-item" id="music-player-toggle">
+                        <i class="fas fa-music"></i><span>悬浮音乐播放器</span>
+                    </div>
+                    <div class="settings-item" id="stats-function">
+                        <i class="fas fa-chart-bar"></i><span>消息统计</span>
                     </div>
                 </div>
             </div>
@@ -2144,7 +2147,31 @@
         </div>
     </div>
 
-
+<!-- 问卷管理弹窗 -->
+<div class="modal" id="survey-modal">
+    <div class="modal-content" style="max-width:520px;padding:20px;">
+        <div class="modal-title" style="margin-bottom:8px;">
+            <i class="fas fa-clipboard-list" style="color:var(--accent-color);"></i>
+            <span>问卷管理</span>
+        </div>
+        <div id="survey-content" style="min-height:300px;">
+            <!-- 由 JS 动态渲染 -->
+        </div>
+        <div class="modal-buttons" style="margin-top:14px;display:flex;gap:8px;justify-content:space-between;border-top:1px solid var(--border-color);padding-top:14px;">
+            <div style="display:flex;gap:6px;">
+                <button class="modal-btn modal-btn-secondary" id="survey-export-btn" style="font-size:12px;padding:6px 12px;">
+                    <i class="fas fa-file-export"></i> 导出
+                </button>
+                <button class="modal-btn modal-btn-secondary" id="survey-import-btn" style="font-size:12px;padding:6px 12px;">
+                    <i class="fas fa-file-import"></i> 导入
+                </button>
+                <input type="file" id="survey-import-input" accept=".json" style="display:none;">
+            </div>
+            <button class="modal-btn modal-btn-secondary" id="close-survey-modal">关闭</button>
+        </div>
+    </div>
+</div>
+        
 <div id="daily-greeting-modal" class="hidden">
     <div class="daily-greeting-card" id="daily-greeting-card">
         <div class="dg-card-bg-layer" id="dg-card-bg-layer"></div>
@@ -2231,6 +2258,7 @@
     <script src="js/features/theme-editor.js"></script>
     <script src="js/features/group-chat.js"></script>
     <script src="js/features/call.js"></script>
+    <script src="js/features/survey.js"></script>
 
     <!-- == 合并模块 == -->
     <script src="js/games.js"></script> 
