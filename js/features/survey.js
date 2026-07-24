@@ -347,22 +347,22 @@ function renderSurveyCreateForm(container) {
                     <span id="survey-question-count">0 个问题</span>
                 </div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                <div>
-                    <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:5px;font-weight:600;">最短回复延迟</label>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <input type="range" id="survey-delay-min" min="1000" max="30000" step="1000" value="3000" style="flex:1;accent-color:var(--accent-color);">
-                        <span id="survey-delay-min-label" style="font-size:12px;color:var(--text-secondary);min-width:50px;text-align:right;">3s</span>
-                    </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+           <div>
+                <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:5px;font-weight:600;">最短回复延迟</label>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <input type="range" id="survey-delay-min" min="1000" max="14400000" step="60000" value="14400000" style="flex:1;accent-color:var(--accent-color);">
+                    <span id="survey-delay-min-label" style="font-size:12px;color:var(--text-secondary);min-width:60px;text-align:right;">4h</span>
                 </div>
-                <div>
-                    <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:5px;font-weight:600;">最长回复延迟</label>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <input type="range" id="survey-delay-max" min="1000" max="60000" step="1000" value="15000" style="flex:1;accent-color:var(--accent-color);">
-                        <span id="survey-delay-max-label" style="font-size:12px;color:var(--text-secondary);min-width:50px;text-align:right;">15s</span>
-                    </div>
+           </div>
+        <div>
+                <label style="font-size:12px;color:var(--text-secondary);display:block;margin-bottom:5px;font-weight:600;">最长回复延迟</label>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <input type="range" id="survey-delay-max" min="1000" max="43200000" step="60000" value="43200000" style="flex:1;accent-color:var(--accent-color);">
+                    <span id="survey-delay-max-label" style="font-size:12px;color:var(--text-secondary);min-width:60px;text-align:right;">12h</span>
                 </div>
             </div>
+        </div>
             <div style="display:flex;gap:10px;margin-top:4px;">
                 <button class="modal-btn modal-btn-secondary" onclick="switchSurveyView('list')" style="flex:1;">取消</button>
                 <button class="modal-btn modal-btn-primary" onclick="submitSurveyCreate()" style="flex:2;">
@@ -388,23 +388,45 @@ function renderSurveyCreateForm(container) {
     const minLabel = document.getElementById('survey-delay-min-label');
     const maxLabel = document.getElementById('survey-delay-max-label');
 
+    // 格式化显示：支持 秒 / 分钟 / 小时
+    function formatDelay(ms) {
+        if (ms >= 3600000) {
+            return (ms / 3600000).toFixed(1) + 'h';
+        } else if (ms >= 60000) {
+            return (ms / 60000).toFixed(0) + 'min';
+        } else {
+            return (ms / 1000).toFixed(0) + 's';
+        }
+    }
+
+    // 初始化显示
+    if (delayMin && minLabel) {
+        minLabel.textContent = formatDelay(parseInt(delayMin.value));
+    }
+    if (delayMax && maxLabel) {
+        maxLabel.textContent = formatDelay(parseInt(delayMax.value));
+    }
+
+    // 最短延迟变化
     if (delayMin && minLabel) {
         delayMin.addEventListener('input', () => {
             const val = parseInt(delayMin.value);
-            minLabel.textContent = val >= 60000 ? `${val/60}min` : `${val/1000}s`;
+            minLabel.textContent = formatDelay(val);
             if (delayMax && parseInt(delayMax.value) < val) {
                 delayMax.value = val;
-                maxLabel.textContent = val >= 60000 ? `${val/60}min` : `${val/1000}s`;
+                maxLabel.textContent = formatDelay(val);
             }
         });
     }
+
+    // 最长延迟变化
     if (delayMax && maxLabel) {
         delayMax.addEventListener('input', () => {
             const val = parseInt(delayMax.value);
-            maxLabel.textContent = val >= 60000 ? `${val/60}min` : `${val/1000}s`;
+            maxLabel.textContent = formatDelay(val);
             if (delayMin && parseInt(delayMin.value) > val) {
                 delayMin.value = val;
-                minLabel.textContent = val >= 60000 ? `${val/60}min` : `${val/1000}s`;
+                minLabel.textContent = formatDelay(val);
             }
         });
     }
