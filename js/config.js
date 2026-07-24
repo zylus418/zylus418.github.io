@@ -342,3 +342,8 @@
         };
 
 window.APP_PREFIX = APP_PREFIX;
+
+// 问卷相关常量
+const SURVEY_PREFIX = 'CHAT_APP_V3_SURVEY_';
+const DEFAULT_SURVEY_REPLY_DELAY_MIN = 3000; // 最小回复延迟 3秒
+const DEFAULT_SURVEY_REPLY_DELAY_MAX = 15000; // 最大回复延迟 15秒
