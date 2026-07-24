@@ -110,7 +110,32 @@ async function simulateSurveyReply(surveyId, onQuestionAnswered) {
         return survey;
     }
 
-    // 获取可用的字卡（排除被屏蔽的）
+    // ============ 关键修复：获取字卡库 ============
+    // 1. 从全局变量获取
+    let replyPool = [];
+    
+    // 尝试从 window 获取
+    if (typeof window.customReplies !== 'undefined' && Array.isArray(window.customReplies)) {
+        replyPool = window.customReplies;
+    } else if (typeof customReplies !== 'undefined' && Array.isArray(customReplies)) {
+        replyPool = customReplies;
+    } else {
+        // 如果都没有，尝试从 localStorage 加载
+        try {
+            const stored = await localforage.getItem(getStorageKey('customReplies'));
+            if (stored && Array.isArray(stored)) {
+                replyPool = stored;
+                // 同步到全局
+                if (typeof window.customReplies === 'undefined') {
+                    window.customReplies = stored;
+                }
+            }
+        } catch (e) {
+            console.warn('从存储加载字卡失败:', e);
+        }
+    }
+
+    // 过滤被屏蔽的字卡
     const disabledItems = (() => {
         try {
             const raw = localStorage.getItem('disabledReplyItems');
@@ -119,30 +144,43 @@ async function simulateSurveyReply(surveyId, onQuestionAnswered) {
     })();
     
     const disabledGroupItems = new Set();
-    (window.customReplyGroups || []).forEach(g => {
-        if (g.disabled && Array.isArray(g.items)) {
-            g.items.forEach(item => disabledGroupItems.add(item));
-        }
-    });
+    if (typeof window.customReplyGroups !== 'undefined') {
+        window.customReplyGroups.forEach(g => {
+            if (g.disabled && Array.isArray(g.items)) {
+                g.items.forEach(item => disabledGroupItems.add(item));
+            }
+        });
+    }
 
-    const replyPool = (customReplies || [])
+    // 过滤有效字卡
+    const filteredPool = replyPool
+        .filter(r => r && typeof r === 'string' && r.trim())
         .filter(r => !disabledItems.has(r) && !disabledGroupItems.has(r))
         .map(r => String(r || '').trim())
         .filter(Boolean);
 
-    if (replyPool.length === 0) {
-        showNotification('字卡库为空，无法完成问卷', 'warning');
-        return survey;
+    console.log('[问卷] 字卡池大小:', filteredPool.length);
+    console.log('[问卷] 字卡样本:', filteredPool.slice(0, 5));
+
+    if (filteredPool.length === 0) {
+        // 如果字卡为空，尝试从 CONSTANTS 获取默认回复
+        if (typeof CONSTANTS !== 'undefined' && CONSTANTS.REPLY_MESSAGES && CONSTANTS.REPLY_MESSAGES.length > 0) {
+            filteredPool.push(...CONSTANTS.REPLY_MESSAGES);
+        }
+        // 如果还是空，添加默认兜底
+        if (filteredPool.length === 0) {
+            filteredPool.push('嗯嗯', '好的', '知道了', '在想你', '今天怎么样？');
+        }
+        showNotification('字卡库为空，使用默认回复', 'warning', 3000);
     }
 
     // 逐题回复
     for (let i = 0; i < survey.questions.length; i++) {
-        // 随机延迟
         const delay = survey.replyDelayMin + Math.random() * (survey.replyDelayMax - survey.replyDelayMin);
         await new Promise(resolve => setTimeout(resolve, delay));
         
-        // 从字卡库中随机选择
-        const shuffled = [...replyPool].sort(() => Math.random() - 0.5);
+        // 从字卡池中随机选择
+        const shuffled = [...filteredPool].sort(() => Math.random() - 0.5);
         const answer = shuffled[Math.floor(Math.random() * shuffled.length)];
         
         survey.replies.push({
@@ -754,3 +792,24 @@ function initSurveyModule() {
         });
     }
 }
+
+/**
+ * 调试：查看当前字卡库状态
+ */
+window.debugSurveyReplies = async function() {
+    console.log('=== 问卷调试信息 ===');
+    console.log('customReplies (全局):', typeof customReplies !== 'undefined' ? customReplies : 'undefined');
+    console.log('window.customReplies:', window.customReplies);
+    
+    try {
+        const stored = await localforage.getItem(getStorageKey('customReplies'));
+        console.log('localStorage 中的字卡:', stored);
+    } catch(e) {
+        console.log('无法读取存储:', e);
+    }
+    
+    const disabled = localStorage.getItem('disabledReplyItems');
+    console.log('被屏蔽的字卡:', disabled ? JSON.parse(disabled) : '无');
+    
+    console.log('=== 调试结束 ===');
+};
