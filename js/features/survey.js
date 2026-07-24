@@ -101,31 +101,32 @@ async function startSurvey(surveyId) {
  * 让梦角回答问卷 - 模拟对方随机回复
  */
 async function simulateSurveyReply(surveyId, onQuestionAnswered) {
-    const survey = await getSurvey(surveyId);
-    if (!survey) return null;
+    // 每次都重新加载最新的问卷数据
+    let surveys = await loadSurveys();
+    let surveyIndex = surveys.findIndex(s => s.id === surveyId);
+    if (surveyIndex === -1) return null;
+    
+    let survey = surveys[surveyIndex];
     if (survey.status === 'completed') return survey;
     if (survey.questions.length === 0) {
         survey.status = 'completed';
-        await saveSurveys(await loadSurveys());
+        await saveSurveys(surveys);
         return survey;
     }
 
-    // ============ 关键修复：获取字卡库 ============
-    // 1. 从全局变量获取
+    // ============ 获取字卡库 ============
     let replyPool = [];
     
-    // 尝试从 window 获取
+    // 尝试从多个来源获取字卡
     if (typeof window.customReplies !== 'undefined' && Array.isArray(window.customReplies)) {
         replyPool = window.customReplies;
     } else if (typeof customReplies !== 'undefined' && Array.isArray(customReplies)) {
         replyPool = customReplies;
     } else {
-        // 如果都没有，尝试从 localStorage 加载
         try {
             const stored = await localforage.getItem(getStorageKey('customReplies'));
             if (stored && Array.isArray(stored)) {
                 replyPool = stored;
-                // 同步到全局
                 if (typeof window.customReplies === 'undefined') {
                     window.customReplies = stored;
                 }
@@ -153,7 +154,7 @@ async function simulateSurveyReply(surveyId, onQuestionAnswered) {
     }
 
     // 过滤有效字卡
-    const filteredPool = replyPool
+    let filteredPool = replyPool
         .filter(r => r && typeof r === 'string' && r.trim())
         .filter(r => !disabledItems.has(r) && !disabledGroupItems.has(r))
         .map(r => String(r || '').trim())
@@ -163,15 +164,14 @@ async function simulateSurveyReply(surveyId, onQuestionAnswered) {
     console.log('[问卷] 字卡样本:', filteredPool.slice(0, 5));
 
     if (filteredPool.length === 0) {
-        // 如果字卡为空，尝试从 CONSTANTS 获取默认回复
-        if (typeof CONSTANTS !== 'undefined' && CONSTANTS.REPLY_MESSAGES && CONSTANTS.REPLY_MESSAGES.length > 0) {
-            filteredPool.push(...CONSTANTS.REPLY_MESSAGES);
-        }
-        // 如果还是空，添加默认兜底
-        if (filteredPool.length === 0) {
-            filteredPool.push('嗯嗯', '好的', '知道了', '在想你', '今天怎么样？');
-        }
+        // 如果字卡为空，使用默认兜底
+        filteredPool = ['嗯嗯', '好的', '知道了', '在想你', '今天怎么样？', '好的呀', '可以哦', '没问题'];
         showNotification('字卡库为空，使用默认回复', 'warning', 3000);
+    }
+
+    // 确保 replies 数组存在
+    if (!survey.replies) {
+        survey.replies = [];
     }
 
     // 逐题回复
@@ -189,6 +189,10 @@ async function simulateSurveyReply(surveyId, onQuestionAnswered) {
             timestamp: Date.now()
         });
 
+        // ============ 关键：每答完一题就保存一次 ============
+        surveys[surveyIndex] = survey;
+        await saveSurveys(surveys);
+
         // 回调通知
         if (onQuestionAnswered) {
             onQuestionAnswered(i, answer);
@@ -203,7 +207,12 @@ async function simulateSurveyReply(surveyId, onQuestionAnswered) {
     }
 
     survey.status = 'completed';
-    await saveSurveys(await loadSurveys());
+    surveys[surveyIndex] = survey;
+    await saveSurveys(surveys);
+    
+    console.log('[问卷] 完成，回复数:', survey.replies.length);
+    console.log('[问卷] 回复内容:', survey.replies);
+    
     return survey;
 }
 
