@@ -12,9 +12,8 @@ function setupEventListeners() {
         initAnniversaryModule(); 
         initThemeEditor(); 
         initThemeSchemes();
-        
         initComboMenu(); 
-        
+        initSurveyModule(); 
     } catch (e) {
         console.error("事件绑定过程中发生错误:", e);
     }
